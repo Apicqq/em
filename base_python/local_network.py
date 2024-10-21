@@ -21,6 +21,18 @@ class InvalidDataException(Exception):
         )
 
 
+def _validate_server(server: "Server") -> None:
+    """
+    Validate if incoming object is an instance of Server.
+
+    :param server: Server to validate.
+    :raises InvalidDataException: If the given
+     server is not an instance of Server.
+    """
+    if not isinstance(server, Server):
+        raise InvalidDataException("Server", type(server))
+
+
 class Device(ABC):
     """
     Abstract base class which represents a device in a network.
@@ -118,17 +130,6 @@ class Router(Device):
         super().__init__()
         self.linked_servers = set()
 
-    def _validate_server(self, server: Server) -> None:
-        """
-        Validate if server is an instance of Server.
-
-        :param server: Server to validate.
-        :raises InvalidDataException: If the given
-         server is not an instance of Server.
-        """
-        if not isinstance(server, Server):
-            raise InvalidDataException("Server", type(server))
-
     def link(self, server: Server) -> None:
         """
         Link a Server to current router.
@@ -138,7 +139,7 @@ class Router(Device):
         :raises InvalidDataException: If the given
          server is not an instance of Server.
         """
-        self._validate_server(server)
+        _validate_server(server)
         if server.connected_to is not None:
             raise RuntimeError("Server is already linked to another router.")
         self.linked_servers.add(server)
@@ -153,7 +154,7 @@ class Router(Device):
          server is not an instance of Server.
         :raises RuntimeError: If server is not linked to any router.
         """
-        self._validate_server(server)
+        _validate_server(server)
         if not server.connected_to:
             raise RuntimeError("Server is not linked to router.")
         self.linked_servers.discard(server)
