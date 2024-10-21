@@ -1,66 +1,107 @@
 from typing import Any
 
 
+class InvalidObjectException(Exception):
+    """Exception raised if incoming object is invalid."""
+
+    def __init__(self, expected_type, actual_type):
+        super().__init__(
+            f"Expected an instance of {expected_type}, got {actual_type}."
+        )
+
+
+def _check_obj(obj: "ObjList") -> None:
+    """Check if the object is an instance of ObjList."""
+    if not isinstance(obj, ObjList):
+        raise InvalidObjectException(ObjList, type(obj))
+
+
 class ObjList:
+    """ObjList class, that represents an object in a linked list."""
 
     def __init__(self, data: Any) -> None:
         self.__prev = None
         self.__next = None
         self.__data = data
 
-    def set_next(self, obj) -> None:
-        self.__next = obj
-
-    def set_prev(self, obj):
-        self.__prev = obj
-
-    def get_next(self):
+    @property
+    def next(self) -> "ObjList":
+        """Get the next object in the list."""
         return self.__next
 
-    def get_prev(self):
+    @next.setter
+    def next(self, obj: "ObjList") -> None:
+        """Set the next object in the list."""
+        _check_obj(obj)
+        self.__next = obj
+
+    @property
+    def prev(self) -> "ObjList":
+        """Get the previous object in the list."""
         return self.__prev
 
-    def set_data(self, data):
-        self.__data = data
+    @prev.setter
+    def prev(self, obj: "ObjList") -> None:
+        """Set the previous object in the list."""
+        _check_obj(obj)
+        self.__prev = obj
 
-    def get_data(self):
+    @property
+    def data(self) -> "Any":
+        """Get object's data."""
         return self.__data
+
+    @data.setter
+    def data(self, data: Any) -> None:
+        """Set the data of the object."""
+        self.__data = data
 
     def __str__(self):
         return self.__data
 
+    def __repr__(self):
+        return (
+            f"ObjList({self.__data}. Next: {self.__next},"
+            f" Prev: {self.__prev})"
+        )
+
 
 class LinkedList:
+    """Double-linked list implementation."""
+
     __slots__ = ("head", "tail")
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.head = None
         self.tail = None
 
-    def add_obj(self, obj: ObjList):
+    def add_obj(self, obj: ObjList) -> None:
+        """Add an object to the end of the list."""
+        _check_obj(obj)
         if not self.head:
             self.head, self.tail = obj, obj
         else:
-            self.tail.set_next(obj)
-            obj.set_prev(self.tail)
+            self.tail.next = obj
+            obj.prev = self.tail
             self.tail = obj
 
     def remove_obj(self) -> None:
+        """Remove an object from the end of the list."""
         if self.tail is None:
             return
-
-        self.tail = self.tail.get_prev()
+        self.tail = self.tail.prev
         if self.tail is not None:
-            self.tail.set_next(None)
+            self.tail.next = None
         else:
             self.head = None
 
-    def get_data(self):
+    def get_data(self) -> list:
+        """Get list's content."""
         data = []
         current: ObjList = self.head
         while current is not None:
-            data.append(current.get_data())
-            current = current.get_next()
+            data.append(current.data)
+            current = current.next
         return data
 
     def is_empty(self):
@@ -69,19 +110,19 @@ class LinkedList:
     def __str__(self):
         return str(self.get_data())
 
+    def __repr__(self):
+        return (
+            f"LinkedList({self.get_data()}."
+            f" Head: {self.head}, Tail: {self.tail})"
+        )
 
-lst = LinkedList()
 
-obj_1 = ObjList("Данные 1")
-obj_1.set_data("Данные УДАЛЕНО")
-lst.add_obj(obj_1)
-lst.add_obj(ObjList("Данные 2"))
-lst.add_obj(ObjList("Данные 3"))
-# print(obj_1.get_next())
-# print(lst)
-# print(lst.head)
-# print(lst.tail)
-# lst.remove_obj()
-# print(f"list head: {lst.head}, list tail: {lst.tail}")
+if __name__ == "__main__":
+    lst = LinkedList()
 
-print(obj_1.get_next().get_next().get_next())
+    lst.add_obj(ObjList("Really secret data"))
+    lst.add_obj(ObjList("Not so secret data"))
+    lst.add_obj(ObjList("This data is totally not secret"))
+
+    res = lst.get_data()
+    print(res)
