@@ -40,7 +40,7 @@ class Device(ABC):
     Abstract base class which represents a device in a network.
 
     This class provides a basic implementation of a device,
-    including IP address generation and data sending capabilities.
+    including data sending capabilities.
     """
 
     __slots__ = ("_buffer",)
