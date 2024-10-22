@@ -214,11 +214,9 @@ class Router(Device):
         self._buffer.clear()
 
 
-@dataclass
+@dataclass(slots=True)
 class Data:
     """Class that represents data that can be sent to another device."""
-
-    __slots__ = ("data", "ip")
 
     data: Any
     ip: int

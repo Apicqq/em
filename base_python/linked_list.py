@@ -1,4 +1,5 @@
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, Optional
 
 
 class InvalidObjectException(Exception):
@@ -16,13 +17,13 @@ def _check_obj(obj: "ObjList") -> None:
         raise InvalidObjectException(ObjList, type(obj))
 
 
+@dataclass(slots=True)
 class ObjList:
     """ObjList class, that represents an object in a linked list."""
 
-    def __init__(self, data: Any) -> None:
-        self.__prev = None
-        self.__next = None
-        self.__data = data
+    __data: Any
+    __next: Optional["ObjList"] = field(default=None)
+    __prev: Optional["ObjList"] = field(default=None)
 
     @property
     def next(self) -> "ObjList":
@@ -103,9 +104,6 @@ class LinkedList:
             data.append(current.data)
             current = current.next
         return data
-
-    def is_empty(self):
-        return not bool(self.head)
 
     def __str__(self):
         return str(self.get_data())
