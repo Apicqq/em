@@ -4,7 +4,6 @@ from random import randint
 from typing import Any, Optional
 
 IP_GENERATION_MAX_RETRIES = 10
-CANNOT_SET_ATTRIBUTE_MANUALLY = "Cannot set attribute {} manually."
 
 
 class IpAddressGenerationError(Exception):
@@ -43,20 +42,20 @@ class Device(ABC):
     including data sending capabilities.
     """
 
-    __slots__ = ("_buffer",)
+    __slots__ = ("__buffer",)
 
     def __init__(self):
-        self._buffer = []
+        self.__buffer = []
 
     @property
     def buffer(self) -> list:
-        """Get the buffer of currently holding packages."""
-        return self._buffer
+        """Method to get the buffer of currently holding packages."""
+        return self.__buffer
 
     @buffer.setter
-    def buffer(self, data: list) -> None:
-        """Manual setting of the buffer is prohibited."""
-        raise RuntimeError(CANNOT_SET_ATTRIBUTE_MANUALLY.format("buffer"))
+    def buffer(self, value: list) -> None:
+        """Set the buffer of currently holding packages."""
+        self.__buffer = value
 
     @abstractmethod
     def send_data(self, **kwargs) -> None:
@@ -83,12 +82,12 @@ class Server(Device):
 
     __assigned_ips = set()
 
-    __slots__ = ("_connected_to", "_ip")
+    __slots__ = ("__connected_to", "__ip")
 
     def __init__(self):
         super().__init__()
-        self._connected_to: Optional[Router] = None
-        self._ip = self.generate_ip()
+        self.__connected_to: Optional[Router] = None
+        self.__ip = self.generate_ip()
 
     def generate_ip(self) -> int:
         """
@@ -111,25 +110,18 @@ class Server(Device):
 
     @property
     def ip(self) -> int:
-        """Get device's IP-address."""
-        return self._ip
-
-    @ip.setter
-    def ip(self, ip: int) -> None:
-        """Manual setting of the IP-address is prohibited."""
-        raise RuntimeError(CANNOT_SET_ATTRIBUTE_MANUALLY.format("ip"))
+        """Read-only method to get device's IP-address."""
+        return self.__ip
 
     @property
     def connected_to(self) -> "Router":
-        """Get device's connected router."""
-        return self._connected_to
+        """Method to get device's connected router."""
+        return self.__connected_to
 
     @connected_to.setter
     def connected_to(self, router: "Router") -> None:
-        """Manual setting of the connected router is prohibited."""
-        raise RuntimeError(
-            CANNOT_SET_ATTRIBUTE_MANUALLY.format("connected_to")
-        )
+        """Set device's connected router."""
+        self.__connected_to = router
 
     def send_data(self, data: "Data") -> None:
         """
@@ -141,7 +133,7 @@ class Server(Device):
         """
         if not isinstance(data, Data):
             raise InvalidDataException("Data", type(data))
-        self._connected_to.buffer.append(data)
+        self.__connected_to.buffer.append(data)
 
     def get_data(self) -> list:
         """Return list of accepted Data packages and clears the buffer."""
@@ -153,23 +145,16 @@ class Server(Device):
 class Router(Device):
     """Class that represents a Router, that can exchange data with Servers."""
 
-    __slots__ = ("_linked_servers",)
+    __slots__ = ("__linked_servers",)
 
     def __init__(self):
         super().__init__()
-        self._linked_servers = set()
+        self.__linked_servers = set()
 
     @property
     def linked_servers(self) -> set:
-        """Get set of currently linked servers to router."""
-        return self._linked_servers
-
-    @linked_servers.setter
-    def linked_servers(self, servers: set) -> None:
-        """Manual setting of the linked servers is prohibited."""
-        raise RuntimeError(
-            CANNOT_SET_ATTRIBUTE_MANUALLY.format("linked_servers")
-        )
+        """Read-only method to get set of linked servers to router."""
+        return self.__linked_servers
 
     def link(self, server: Server) -> None:
         """
@@ -184,7 +169,7 @@ class Router(Device):
         if server.connected_to is not None:
             raise RuntimeError("Server is already linked to another router.")
         self.linked_servers.add(server)
-        server._connected_to = self
+        server.connected_to = self
 
     def unlink(self, server: Server) -> None:
         """
@@ -199,7 +184,7 @@ class Router(Device):
         if not server.connected_to:
             raise RuntimeError("Server is not linked to router.")
         self.linked_servers.discard(server)
-        server._connected_to = None
+        server.connected_to = None
 
     def send_data(self) -> None:
         """
@@ -208,10 +193,10 @@ class Router(Device):
         Clears buffer after all packages were sent.
         """
         for package in self.buffer:
-            for server in self._linked_servers:
+            for server in self.linked_servers:
                 if server.ip == package.ip:
                     server.buffer.append(package)
-        self._buffer.clear()
+        self.buffer.clear()
 
 
 @dataclass(slots=True)
@@ -239,4 +224,3 @@ if __name__ == "__main__":
     _router.send_data()
     sv_3 = Server()
     print(sv_to.get_data())
-    print(sv_to)
