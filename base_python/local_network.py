@@ -87,9 +87,9 @@ class Server(Device):
     def __init__(self):
         super().__init__()
         self._connected_to: Optional[Router] = None
-        self._ip = self.generate_ip()
+        self._ip = self._generate_ip()
 
-    def generate_ip(self) -> int:
+    def _generate_ip(self) -> int:
         """
         Generate a unique IP address.
 
