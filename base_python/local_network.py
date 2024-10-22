@@ -42,20 +42,20 @@ class Device(ABC):
     including data sending capabilities.
     """
 
-    __slots__ = ("__buffer",)
+    __slots__ = ("_buffer",)
 
     def __init__(self):
-        self.__buffer = []
+        self._buffer = []
 
     @property
     def buffer(self) -> list:
         """Method to get the buffer of currently holding packages."""
-        return self.__buffer
+        return self._buffer
 
     @buffer.setter
     def buffer(self, value: list) -> None:
         """Set the buffer of currently holding packages."""
-        self.__buffer = value
+        self._buffer = value
 
     @abstractmethod
     def send_data(self, **kwargs) -> None:
@@ -82,12 +82,12 @@ class Server(Device):
 
     __assigned_ips = set()
 
-    __slots__ = ("__connected_to", "__ip")
+    __slots__ = ("_connected_to", "_ip")
 
     def __init__(self):
         super().__init__()
-        self.__connected_to: Optional[Router] = None
-        self.__ip = self.generate_ip()
+        self._connected_to: Optional[Router] = None
+        self._ip = self.generate_ip()
 
     def generate_ip(self) -> int:
         """
@@ -111,17 +111,17 @@ class Server(Device):
     @property
     def ip(self) -> int:
         """Read-only method to get device's IP-address."""
-        return self.__ip
+        return self._ip
 
     @property
     def connected_to(self) -> "Router":
         """Method to get device's connected router."""
-        return self.__connected_to
+        return self._connected_to
 
     @connected_to.setter
     def connected_to(self, router: "Router") -> None:
         """Set device's connected router."""
-        self.__connected_to = router
+        self._connected_to = router
 
     def send_data(self, data: "Data") -> None:
         """
@@ -133,7 +133,7 @@ class Server(Device):
         """
         if not isinstance(data, Data):
             raise InvalidDataException("Data", type(data))
-        self.__connected_to.buffer.append(data)
+        self.connected_to.buffer.append(data)
 
     def get_data(self) -> list:
         """Return list of accepted Data packages and clears the buffer."""
@@ -145,16 +145,16 @@ class Server(Device):
 class Router(Device):
     """Class that represents a Router, that can exchange data with Servers."""
 
-    __slots__ = ("__linked_servers",)
+    __slots__ = ("_linked_servers",)
 
     def __init__(self):
         super().__init__()
-        self.__linked_servers = set()
+        self._linked_servers = set()
 
     @property
     def linked_servers(self) -> set:
         """Read-only method to get set of linked servers to router."""
-        return self.__linked_servers
+        return self._linked_servers
 
     def link(self, server: Server) -> None:
         """
