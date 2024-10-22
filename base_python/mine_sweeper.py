@@ -37,6 +37,8 @@ class Cell:
     @mine.setter
     def mine(self, value: bool) -> None:
         """Set whether the cell is a mine."""
+        if not isinstance(value, bool):
+            raise TypeError("mine must be a boolean value")
         self._mine = value
 
     @property
@@ -47,6 +49,8 @@ class Cell:
     @around_mines.setter
     def around_mines(self, value: int) -> None:
         """Set number of mines around the cell."""
+        if not isinstance(value, int):
+            raise TypeError("around_mines must be an integer value")
         self._around_mines = value
 
     @property

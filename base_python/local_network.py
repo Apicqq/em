@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from random import randint
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 IP_GENERATION_MAX_RETRIES = 10
 
@@ -22,16 +22,26 @@ class InvalidDataException(Exception):
         )
 
 
-def _validate_server(server: "Server") -> None:
+def _validate_device(
+        base_class: str, device: Union["Device", "Router"]
+) -> None:
     """
-    Validate if incoming object is an instance of Server.
+    Validate if incoming device is of correct type.
 
-    :param server: Server to validate.
+    :param device: device to validate.
+    :param base_class: against which class device is being validated.
     :raises InvalidDataException: If the given
-     server is not an instance of Server.
+     device is not an instance of appropriate class.
     """
-    if not isinstance(server, Server):
-        raise InvalidDataException("Server", type(server))
+    match base_class:
+        case "Server":
+            if not isinstance(device, Server):
+                raise InvalidDataException(Server, type(device))
+        case "Router":
+            if not isinstance(device, Router):
+                raise InvalidDataException(Router, type(device))
+        case _:
+            raise ValueError(f"Invalid caller: {base_class}.")
 
 
 class Device(ABC):
@@ -49,13 +59,8 @@ class Device(ABC):
 
     @property
     def buffer(self) -> list:
-        """Method to get the buffer of currently holding packages."""
+        """Read-only method to get the buffer of currently holding packages."""
         return self._buffer
-
-    @buffer.setter
-    def buffer(self, value: list) -> None:
-        """Set the buffer of currently holding packages."""
-        self._buffer = value
 
     @abstractmethod
     def send_data(self, **kwargs) -> None:
@@ -121,6 +126,7 @@ class Server(Device):
     @connected_to.setter
     def connected_to(self, router: "Router") -> None:
         """Set device's connected router."""
+        _validate_device("Router", router)
         self._connected_to = router
 
     def send_data(self, data: "Data") -> None:
@@ -165,7 +171,7 @@ class Router(Device):
         :raises InvalidDataException: If the given
          server is not an instance of Server.
         """
-        _validate_server(server)
+        _validate_device("Server", server)
         if server.connected_to is not None:
             raise RuntimeError("Server is already linked to another router.")
         self.linked_servers.add(server)
@@ -180,7 +186,7 @@ class Router(Device):
          server is not an instance of Server.
         :raises RuntimeError: If server is not linked to any router.
         """
-        _validate_server(server)
+        _validate_device("Server", server)
         if not server.connected_to:
             raise RuntimeError("Server is not linked to router.")
         self.linked_servers.discard(server)

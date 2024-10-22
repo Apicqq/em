@@ -48,7 +48,7 @@ class ObjList:
         self.__prev = obj
 
     @property
-    def data(self) -> "Any":
+    def data(self) -> Any:
         """Get object's data."""
         return self.__data
 
