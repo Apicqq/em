@@ -89,7 +89,7 @@ class GamePole:
             raise ValueError(INVALID_CELL_COORDINATES)
         cell_to_be_revealed = self.pole[x_pos][y_pos]
         if (x_pos < 0 or x_pos >= self.size) or (
-                y_pos < 0 or y_pos >= self.size
+            y_pos < 0 or y_pos >= self.size
         ):
             raise ValueError(INVALID_CELL_COORDINATES)
         if cell_to_be_revealed.is_open:
