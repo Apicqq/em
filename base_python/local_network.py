@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from random import randint
-from typing import Optional
+from typing import Any, Optional
 
 IP_GENERATION_MAX_RETRIES = 10
+CANNOT_SET_ATTRIBUTE_MANUALLY = "Cannot set attribute {} manually."
 
 
 class IpAddressGenerationError(Exception):
@@ -41,10 +43,20 @@ class Device(ABC):
     including IP address generation and data sending capabilities.
     """
 
-    __slots__ = ("buffer",)
+    __slots__ = ("_buffer",)
 
     def __init__(self):
-        self.buffer = []
+        self._buffer = []
+
+    @property
+    def buffer(self) -> list:
+        """Get the buffer of currently holding packages."""
+        return self._buffer
+
+    @buffer.setter
+    def buffer(self, data: list) -> None:
+        """Manual setting of the buffer is prohibited."""
+        raise RuntimeError(CANNOT_SET_ATTRIBUTE_MANUALLY.format("buffer"))
 
     @abstractmethod
     def send_data(self, **kwargs) -> None:
@@ -71,11 +83,11 @@ class Server(Device):
 
     __assigned_ips = set()
 
-    __slots__ = ("connected_to", "_ip")
+    __slots__ = ("_connected_to", "_ip")
 
     def __init__(self):
         super().__init__()
-        self.connected_to: Optional[Router] = None
+        self._connected_to: Optional[Router] = None
         self._ip = self.generate_ip()
 
     def generate_ip(self) -> int:
@@ -102,6 +114,23 @@ class Server(Device):
         """Get device's IP-address."""
         return self._ip
 
+    @ip.setter
+    def ip(self, ip: int) -> None:
+        """Manual setting of the IP-address is prohibited."""
+        raise RuntimeError(CANNOT_SET_ATTRIBUTE_MANUALLY.format("ip"))
+
+    @property
+    def connected_to(self) -> "Router":
+        """Get device's connected router."""
+        return self._connected_to
+
+    @connected_to.setter
+    def connected_to(self, router: "Router") -> None:
+        """Manual setting of the connected router is prohibited."""
+        raise RuntimeError(
+            CANNOT_SET_ATTRIBUTE_MANUALLY.format("connected_to")
+        )
+
     def send_data(self, data: "Data") -> None:
         """
         Send the given data to the connected router.
@@ -112,7 +141,7 @@ class Server(Device):
         """
         if not isinstance(data, Data):
             raise InvalidDataException("Data", type(data))
-        self.connected_to.buffer.append(data)
+        self._connected_to.buffer.append(data)
 
     def get_data(self) -> list:
         """Return list of accepted Data packages and clears the buffer."""
@@ -124,11 +153,23 @@ class Server(Device):
 class Router(Device):
     """Class that represents a Router, that can exchange data with Servers."""
 
-    __slots__ = ("linked_servers",)
+    __slots__ = ("_linked_servers",)
 
     def __init__(self):
         super().__init__()
-        self.linked_servers = set()
+        self._linked_servers = set()
+
+    @property
+    def linked_servers(self) -> set:
+        """Get set of currently linked servers to router."""
+        return self._linked_servers
+
+    @linked_servers.setter
+    def linked_servers(self, servers: set) -> None:
+        """Manual setting of the linked servers is prohibited."""
+        raise RuntimeError(
+            CANNOT_SET_ATTRIBUTE_MANUALLY.format("linked_servers")
+        )
 
     def link(self, server: Server) -> None:
         """
@@ -143,7 +184,7 @@ class Router(Device):
         if server.connected_to is not None:
             raise RuntimeError("Server is already linked to another router.")
         self.linked_servers.add(server)
-        server.connected_to = self
+        server._connected_to = self
 
     def unlink(self, server: Server) -> None:
         """
@@ -158,7 +199,7 @@ class Router(Device):
         if not server.connected_to:
             raise RuntimeError("Server is not linked to router.")
         self.linked_servers.discard(server)
-        server.connected_to = None
+        server._connected_to = None
 
     def send_data(self) -> None:
         """
@@ -167,37 +208,37 @@ class Router(Device):
         Clears buffer after all packages were sent.
         """
         for package in self.buffer:
-            for server in self.linked_servers:
+            for server in self._linked_servers:
                 if server.ip == package.ip:
                     server.buffer.append(package)
-        self.buffer.clear()
+        self._buffer.clear()
 
 
+@dataclass
 class Data:
     """Class that represents data that can be sent to another device."""
 
     __slots__ = ("data", "ip")
 
-    def __init__(self, data: str, ip: int):
-        self.data = data
-        self.ip = ip
+    data: Any
+    ip: int
 
     def __repr__(self):
         return f"Data(data: {self.data}, ip_to: {self.ip})"
 
 
 if __name__ == "__main__":
-    router = Router()
+    _router = Router()
     sv_from = Server()
     sv_to = Server()
     sv_from2 = Server()
-    router.link(sv_from)
-    router.link(sv_from2)
-    router.link(sv_to)
+    _router.link(sv_from)
+    _router.link(sv_from2)
+    _router.link(sv_to)
     sv_from.send_data(Data("Hello", sv_to.ip))
     sv_from2.send_data(Data("World", sv_to.ip))
     sv_to.send_data(Data("Hi!", sv_from.ip))
-    router.send_data()
+    _router.send_data()
     sv_3 = Server()
-    # router.unlink(sv_3)
     print(sv_to.get_data())
+    print(sv_to)
