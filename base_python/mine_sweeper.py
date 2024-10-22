@@ -14,12 +14,14 @@ class CellAlreadyRevealedException(Exception):
 class Cell:
     """Class which represents a cell in a Minesweeper field."""
 
+    __slots__ = ("mine", "around_mines", "is_open")
+
     def __init__(self, around_mines: int, mine: bool) -> None:
         self.mine = mine
         self.around_mines = around_mines
         self.is_open = False
 
-    def __str__(self):
+    def __repr__(self) -> str:
         return (
             f"Cell(is_mine:"
             f" {self.mine},"
@@ -31,6 +33,8 @@ class Cell:
 class GamePole:
     """Class which represents Minesweeper game."""
 
+    __slots__ = ("pole", "size", "mines_count")
+
     def __init__(self, size: int, mines_count: int) -> None:
         self.size = size
         self.mines_count = mines_count
@@ -39,7 +43,13 @@ class GamePole:
 
     def show(self) -> None:
         """Reveal the game field."""
-        for row in self.pole:
+        print("  ", end="")
+        for i in range(len(self.pole[0])):
+            print(i, end=" ")
+        print()
+        # to print cell position horizontally
+        for i, row in enumerate(self.pole):
+            print(i, end=" ")
             for cell in row:
                 if cell.is_open:
                     if cell.mine:
@@ -73,13 +83,13 @@ class GamePole:
                             y_mine_pos + j
                         ].around_mines += 1
 
-    def reveal_cell(self, x_axis: int, y_axis: int):
+    def reveal_cell(self, x_pos: int, y_pos: int) -> None:
         """Reveal the cell."""
-        if 0 < x_axis >= self.size or 0 < y_axis >= self.size:
+        if 0 < x_pos >= self.size or 0 < y_pos >= self.size:
             raise ValueError(INVALID_CELL_COORDINATES)
-        cell_to_be_revealed = self.pole[x_axis][y_axis]
-        if (x_axis < 0 or x_axis >= self.size) or (
-            y_axis < 0 or y_axis >= self.size
+        cell_to_be_revealed = self.pole[x_pos][y_pos]
+        if (x_pos < 0 or x_pos >= self.size) or (
+                y_pos < 0 or y_pos >= self.size
         ):
             raise ValueError(INVALID_CELL_COORDINATES)
         if cell_to_be_revealed.is_open:
