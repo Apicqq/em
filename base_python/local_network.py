@@ -13,7 +13,6 @@ class DeviceType(Enum):
     SERVER = auto()
     ROUTER = auto()
 
-
 class IpAddressGenerationError(Exception):
     """Exception raised if IP-address could not be generated."""
 
@@ -30,6 +29,15 @@ class InvalidDataException(Exception):
         )
 
 
+class Buffer(list):
+    """Class that implements an interface for buffer for various devices."""
+
+    def get_data(self):
+        """Retrieve data from buffer and clear it afterward."""
+        data = self.copy()
+        self.clear()
+        return data
+
 class Device(ABC):
     """
     Abstract base class which represents a device in a network.
@@ -41,7 +49,7 @@ class Device(ABC):
     __slots__ = ("_buffer",)
 
     def __init__(self):
-        self._buffer = []
+        self._buffer = Buffer()
 
     @classmethod
     def _validate_device(
@@ -66,7 +74,7 @@ class Device(ABC):
                 raise ValueError(f"Invalid caller: {device_type}.")
 
     @property
-    def buffer(self) -> list:
+    def buffer(self) -> Buffer:
         """Read-only method to get the buffer of currently holding packages."""
         return self._buffer
 
@@ -147,13 +155,11 @@ class Server(Device):
         """
         if not isinstance(data, Data):
             raise InvalidDataException("Data", type(data))
-        self.connected_to.buffer.append(data)
+        self.connected_to._buffer.append(data)
 
     def get_data(self) -> list:
         """Return list of accepted Data packages and clears the buffer."""
-        buffer = self.buffer.copy()
-        self.buffer.clear()
-        return buffer
+        return self.buffer.get_data()
 
 
 class Router(Device):
