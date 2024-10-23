@@ -13,6 +13,7 @@ class DeviceType(Enum):
     SERVER = auto()
     ROUTER = auto()
 
+
 class IpAddressGenerationError(Exception):
     """Exception raised if IP-address could not be generated."""
 
@@ -37,6 +38,7 @@ class Buffer(list):
         data = self.copy()
         self.clear()
         return data
+
 
 class Device(ABC):
     """
