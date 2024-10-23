@@ -221,7 +221,7 @@ class Router(Device):
         self.buffer.clear()
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Data:
     """Class that represents data that can be sent to another device."""
 
