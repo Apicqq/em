@@ -1,9 +1,17 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum, auto
 from random import randint
 from typing import Any, Optional, Union
 
 IP_GENERATION_MAX_RETRIES = 10
+
+
+class DeviceType(Enum):
+    """Enum class for device types."""
+
+    SERVER = auto()
+    ROUTER = auto()
 
 
 class IpAddressGenerationError(Exception):
@@ -37,25 +45,25 @@ class Device(ABC):
 
     @classmethod
     def _validate_device(
-        cls, base_class: str, device: Union["Device", "Router"]
+        cls, device_type: DeviceType, device: Union["Device", "Router"]
     ) -> None:
         """
         Validate if incoming device is of correct type.
 
         :param device: device to validate.
-        :param base_class: against which class device is being validated.
+        :param device_type: against which class device is being validated.
         :raises InvalidDataException: If the given
          device is not an instance of appropriate class.
         """
-        match base_class:
-            case "Server":
+        match device_type:
+            case DeviceType.SERVER:
                 if not isinstance(device, Server):
                     raise InvalidDataException(Server, type(device))
-            case "Router":
+            case DeviceType.ROUTER:
                 if not isinstance(device, Router):
                     raise InvalidDataException(Router, type(device))
             case _:
-                raise ValueError(f"Invalid caller: {base_class}.")
+                raise ValueError(f"Invalid caller: {device_type}.")
 
     @property
     def buffer(self) -> list:
@@ -126,7 +134,7 @@ class Server(Device):
     @connected_to.setter
     def connected_to(self, router: "Router") -> None:
         """Set device's connected router."""
-        self._validate_device("Router", router)
+        self._validate_device(DeviceType.ROUTER, router)
         self._connected_to = router
 
     def send_data(self, data: "Data") -> None:
@@ -171,7 +179,7 @@ class Router(Device):
         :raises InvalidDataException: If the given
          server is not an instance of Server.
         """
-        self._validate_device("Server", server)
+        self._validate_device(DeviceType.SERVER, server)
         if server.connected_to is not None:
             raise RuntimeError("Server is already linked to another router.")
         self.linked_servers.add(server)
@@ -186,7 +194,7 @@ class Router(Device):
          server is not an instance of Server.
         :raises RuntimeError: If server is not linked to any router.
         """
-        self._validate_device("Server", server)
+        self._validate_device(DeviceType.SERVER, server)
         if not server.connected_to:
             raise RuntimeError("Server is not linked to router.")
         self.linked_servers.discard(server)
