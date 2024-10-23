@@ -55,25 +55,27 @@ class Device(ABC):
 
     @classmethod
     def _validate_device(
-        cls, device_type: DeviceType, device: Union["Device", "Router"]
+            cls,
+            expected_type: DeviceType,
+            incoming_type: Union["Device", "Router"]
     ) -> None:
         """
         Validate if incoming device is of correct type.
 
-        :param device: device to validate.
-        :param device_type: against which class device is being validated.
+        :param incoming_type: device to validate.
+        :param expected_type: against which class device is being validated.
         :raises InvalidDataException: If the given
          device is not an instance of appropriate class.
         """
-        match device_type:
+        match expected_type:
             case DeviceType.SERVER:
-                if not isinstance(device, Server):
-                    raise InvalidDataException(Server, type(device))
+                if not isinstance(incoming_type, Server):
+                    raise InvalidDataException(Server, type(incoming_type))
             case DeviceType.ROUTER:
-                if not isinstance(device, Router):
-                    raise InvalidDataException(Router, type(device))
+                if not isinstance(incoming_type, Router):
+                    raise InvalidDataException(Router, type(incoming_type))
             case _:
-                raise ValueError(f"Invalid caller: {device_type}.")
+                raise ValueError(f"Invalid caller: {expected_type}.")
 
     @property
     def buffer(self) -> Buffer:
