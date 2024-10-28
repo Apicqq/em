@@ -131,10 +131,6 @@ class GamePole:
         if 0 < x_pos >= self.size or 0 < y_pos >= self.size:
             raise ValueError(INVALID_CELL_COORDINATES)
         cell_to_be_revealed = self._pole[x_pos][y_pos]
-        if (x_pos < 0 or x_pos >= self.size) or (
-            y_pos < 0 or y_pos >= self.size
-        ):
-            raise ValueError(INVALID_CELL_COORDINATES)
         if cell_to_be_revealed.is_open:
             raise CellAlreadyRevealedException(
                 "Cell is already revealed! Please try again."
