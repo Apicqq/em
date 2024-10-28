@@ -1,6 +1,16 @@
 import random
 
 INVALID_CELL_COORDINATES = "Invalid coordinates. Please try again."
+NEARBY_CELLS_IDX = [
+    (-1, -1),
+    (-1, 0),
+    (-1, 1),
+    (0, -1),
+    (0, 1),
+    (1, -1),
+    (1, 0),
+    (1, 1),
+]
 
 
 class GameOverException(Exception):
@@ -30,9 +40,15 @@ class Cell:
         )
 
     @property
-    def mine(self) -> bool:
-        """Property indicating whether the cell is a mine."""
-        return self._mine
+    def mine(self) -> str:
+        """Property representing mine on the field."""
+        if self.is_open:
+            if self._mine:
+                return "*"
+            else:
+                return str(self.around_mines)
+        else:
+            return "#"
 
     @mine.setter
     def mine(self, value: bool) -> None:
@@ -80,13 +96,7 @@ class GamePole:
         for i, row in enumerate(self._pole):
             print(i, end=" ")
             for cell in row:
-                if cell.is_open:
-                    if cell.mine:
-                        print("*", end=" ")
-                    else:
-                        print(cell.around_mines, end=" ")
-                else:
-                    print("#", end=" ")
+                print(cell.mine, end=" ")
             print()
 
     @property
@@ -106,16 +116,15 @@ class GamePole:
         mines = random.sample(range(self.size**2), self.mines_count)
         for mine in mines:
             x_mine_pos, y_mine_pos = mine // self.size, mine % self.size
-            self._pole[x_mine_pos][y_mine_pos].mine = True
-            for i in range(-1, 2):
-                for j in range(-1, 2):
-                    if (
-                        0 <= x_mine_pos + i < self.size
-                        and 0 <= y_mine_pos + j < self.size
-                    ):
-                        self._pole[x_mine_pos + i][
-                            y_mine_pos + j
-                        ].around_mines += 1
+            self._pole[x_mine_pos][y_mine_pos]._mine = True
+            for dx, dy in NEARBY_CELLS_IDX:
+                x, y = x_mine_pos + dx, y_mine_pos + dy
+                self.set_around_mines_on_field(x, y)
+
+    def set_around_mines_on_field(self, x_mine_pos, y_mine_pos) -> None:
+        """Set number of mines around the cell."""
+        if 0 <= x_mine_pos < self.size and 0 <= y_mine_pos < self.size:
+            self._pole[x_mine_pos][y_mine_pos].around_mines += 1
 
     def reveal_cell(self, x_pos: int, y_pos: int) -> None:
         """Reveal the cell."""
@@ -131,7 +140,7 @@ class GamePole:
                 "Cell is already revealed! Please try again."
             )
         cell_to_be_revealed._is_open = True
-        if cell_to_be_revealed.mine:
+        if cell_to_be_revealed._mine:
             raise GameOverException("You stepped on a mine!")
 
     def play_game(self):

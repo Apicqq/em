@@ -26,7 +26,7 @@ class ObjList:
     __prev: Optional["ObjList"] = field(default=None)
 
     @property
-    def next(self) -> "ObjList":
+    def next(self) -> Optional["ObjList"]:
         """Get the next object in the list."""
         return self.__next
 
@@ -37,7 +37,7 @@ class ObjList:
         self.__next = obj
 
     @property
-    def prev(self) -> "ObjList":
+    def prev(self) -> Optional["ObjList"]:
         """Get the previous object in the list."""
         return self.__prev
 
@@ -73,18 +73,20 @@ class LinkedList:
     __slots__ = ("head", "tail")
 
     def __init__(self) -> None:
-        self.head = None
-        self.tail = None
+        self.head: Optional[ObjList] = None
+        self.tail: Optional[ObjList] = None
 
     def add_obj(self, obj: ObjList) -> None:
         """Add an object to the end of the list."""
         _check_obj(obj)
         if not self.head:
-            self.head, self.tail = obj, obj
-        else:
-            self.tail.next = obj
-            obj.prev = self.tail
+            self.head = obj
             self.tail = obj
+        else:
+            if self.tail is not None:
+                self.tail.next = obj
+                obj.prev = self.tail
+                self.tail = obj
 
     def remove_obj(self) -> None:
         """Remove an object from the end of the list."""
@@ -96,10 +98,10 @@ class LinkedList:
         else:
             self.head = None
 
-    def get_data(self) -> list:
+    def get_data(self) -> list[Any]:
         """Get list's content."""
         data = []
-        current: ObjList = self.head
+        current: Optional[ObjList] = self.head
         while current is not None:
             data.append(current.data)
             current = current.next

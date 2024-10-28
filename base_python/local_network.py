@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass
 from enum import Enum, auto
 from random import randint
@@ -55,9 +55,9 @@ class Device(ABC):
 
     @classmethod
     def _validate_device(
-            cls,
-            expected_type: DeviceType,
-            incoming_type: Union["Device", "Router"]
+        cls,
+        expected_type: DeviceType,
+        incoming_type: Union["Device", "Router"],
     ) -> None:
         """
         Validate if incoming device is of correct type.
@@ -82,30 +82,11 @@ class Device(ABC):
         """Read-only method to get the buffer of currently holding packages."""
         return self._buffer
 
-    @abstractmethod
-    def send_data(self, **kwargs) -> None:
-        """Abstract method that sends data to destination."""
-        raise NotImplementedError(
-            "You must implement that method in child class."
-        )
-
-    def __repr__(self) -> str:
-        if type(self) == Router:
-            return (
-                f"{type(self).__name__} with {len(self.linked_servers)}"
-                f" linked servers and "
-                f"{len(self.buffer)} packages in buffer."
-            )
-        return (
-            f"{type(self).__name__} with IP: {self.ip}. Currently"
-            f" holding {len(self.buffer)} packages in buffer."
-        )
-
 
 class Server(Device):
     """Class that represents a Server, that can exchange data with Router."""
 
-    __assigned_ips = set()
+    __assigned_ips = set[int]()
 
     __slots__ = ("_connected_to", "_ip")
 
@@ -139,7 +120,7 @@ class Server(Device):
         return self._ip
 
     @property
-    def connected_to(self) -> "Router":
+    def connected_to(self) -> Optional["Router"]:
         """Method to get device's connected router."""
         return self._connected_to
 
@@ -159,11 +140,18 @@ class Server(Device):
         """
         if not isinstance(data, Data):
             raise InvalidDataException("Data", type(data))
-        self.connected_to._buffer.append(data)
+        if self.connected_to is not None:
+            self.connected_to._buffer.append(data)
 
     def get_data(self) -> list:
         """Return list of accepted Data packages and clears the buffer."""
         return self.buffer.get_data()
+
+    def __repr__(self):
+        return (
+            f"{type(self).__name__} with IP: {self.ip}. Currently"
+            f" holding {len(self.buffer)} packages in buffer."
+        )
 
 
 class Router(Device):
@@ -222,6 +210,13 @@ class Router(Device):
                     server.buffer.append(package)
         self.buffer.clear()
 
+    def __repr__(self):
+        return (
+            f"{type(self).__name__} with {len(self.linked_servers)}"
+            f" linked servers and "
+            f"{len(self.buffer)} packages in buffer."
+        )
+
 
 @dataclass(slots=True, frozen=True)
 class Data:
@@ -248,3 +243,8 @@ if __name__ == "__main__":
     _router.send_data()
     sv_3 = Server()
     print(sv_to.get_data())
+
+sc = {1, 2, 3, "as"}
+
+
+print(sc)
