@@ -10,8 +10,8 @@ from sqlalchemy.orm import (
 from sqlalchemy import String, Float, Date, DateTime, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .db_setup import AsyncSessionLocal, engine
-from .parser_stdlib import read_xls_file, REPORTS_DIR
+from db_setup import AsyncSessionLocal, engine #type: ignore
+from parser_stdlib import read_xls_file, REPORTS_DIR #type: ignore
 
 
 class PreBase:
@@ -29,6 +29,7 @@ Base = declarative_base(cls=PreBase)
 
 
 class Instrument(Base):  # type: ignore
+    """Class which represents Instrument model in SQLAlchemy database."""
 
     __tablename__ = "instruments"
 
@@ -47,11 +48,13 @@ class Instrument(Base):  # type: ignore
 
 
 async def create_model() -> None:
+    """Create database model."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
 async def import_data_to_db(session: AsyncSession) -> None:
+    """Import previously-created Instruments to database."""
     instruments = read_xls_file(REPORTS_DIR)
     session.add_all(
         [
@@ -63,6 +66,8 @@ async def import_data_to_db(session: AsyncSession) -> None:
 
 
 async def entrypoint() -> None:
+    """Main entrypoint to DB model creation."""
+
     async with AsyncSessionLocal() as session:
         await create_model()
         await import_data_to_db(session)

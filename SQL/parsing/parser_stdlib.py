@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 import re
 import logging
+from http import HTTPStatus
 from http.client import HTTPResponse
 from urllib.request import urlopen, urlretrieve
 import pathlib
@@ -68,11 +69,11 @@ class Parser:
                 response: HTTPResponse = await loop.run_in_executor(
                     pool, urlopen, url
                 )
-                if response.getcode() != 200:
+                if response.getcode() != HTTPStatus.OK:
                     raise ConnectionError
             except ConnectionError as exception:
                 logger.exception("failed to fetch url %s", url)
-                raise ParserError(url, exception)
+                raise ParserError(url, exception) from ConnectionError
             logger.debug("parsing url %s", url)
             return response.read().decode(encoding).splitlines()
 
