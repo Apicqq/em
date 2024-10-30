@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from datetime import datetime
 
 from sqlalchemy.orm import (
@@ -10,8 +11,8 @@ from sqlalchemy.orm import (
 from sqlalchemy import String, Float, Date, DateTime, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db_setup import AsyncSessionLocal, engine #type: ignore
-from parser_stdlib import read_xls_file, REPORTS_DIR #type: ignore
+from db_setup import AsyncSessionLocal, engine
+from parser_stdlib import parse_xls_files, REPORTS_DIR
 
 
 class PreBase:
@@ -54,8 +55,8 @@ async def create_model() -> None:
 
 
 async def import_data_to_db(session: AsyncSession) -> None:
-    """Import previously-created Instruments to database."""
-    instruments = read_xls_file(REPORTS_DIR)
+    """Add previously-created Instruments to database."""
+    instruments = parse_xls_files(REPORTS_DIR)
     session.add_all(
         [
             Instrument(**await instrument.to_dict(exclude={"id"}))
@@ -65,13 +66,18 @@ async def import_data_to_db(session: AsyncSession) -> None:
     await session.commit()
 
 
-async def entrypoint() -> None:
+async def create_model_and_import_data_to_db() -> None:
     """Main entrypoint to DB model creation."""
 
     async with AsyncSessionLocal() as session:
+        sys.stdout.write("Creating model...\n")
         await create_model()
+
+        sys.stdout.write("Importing data...\n")
         await import_data_to_db(session)
+
+        sys.stdout.write("Importing data was successfully done.\n")
 
 
 if __name__ == "__main__":
-    asyncio.run(entrypoint())
+    asyncio.run(create_model_and_import_data_to_db())

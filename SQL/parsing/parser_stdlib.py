@@ -3,15 +3,22 @@ import concurrent.futures
 from datetime import datetime
 import os
 import re
+import sys
 import logging
 from http import HTTPStatus
 from http.client import HTTPResponse
 from urllib.request import urlopen, urlretrieve
 import pathlib
 from typing import Any
-import xlrd  # type: ignore
+from shutil import rmtree
 
-from models import Instrument #type: ignore
+import xlrd
+
+from models import Instrument
+from constants import (
+    REPORTS_DIR,
+    CONTRACT_VALUE_IDX,
+)
 
 
 class ParserError(Exception):
@@ -25,11 +32,6 @@ class InvalidDataException(Exception):
             f"Expected an instance of {expected_type}, got {actual_type}."
         )
 
-
-BASE_DIR = pathlib.Path(__file__).parent
-REPORTS_DIR = BASE_DIR / "reports"
-REPORTS_RANGE = range(45, 0, -1)
-CONTRACT_VALUE_IDX = -1
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -48,7 +50,7 @@ class Parser:
         self.re_pattern = re.compile(r"href=\"([^\"]+)\"")
 
     @classmethod
-    def _check_incoming_data_type(cls, data: Any, expected_type: Any) -> None:
+    def _check_incoming_data_type(cls, data: Any, expected_type: type) -> None:
         if not isinstance(data, expected_type):
             raise InvalidDataException(expected_type, type(data))
 
@@ -162,7 +164,7 @@ class Parser:
         return urls
 
 
-def read_xls_file(path: pathlib.Path) -> list[Instrument]:
+def parse_xls_files(path: pathlib.Path) -> list[Instrument]:
     """
     Read XLS file and return list of instruments.
 
@@ -175,30 +177,30 @@ def read_xls_file(path: pathlib.Path) -> list[Instrument]:
     instruments = []
     for item in path.glob("*.xls"):
         file = xlrd.open_workbook(item)
-        sh = file.sheet_by_index(0)
+        sheet = file.sheet_by_index(0)
         trade_date = datetime.strptime(
-            sh.row_values(3)[1].split(":")[1].strip(), "%d.%m.%Y"
+            sheet.row_values(3)[1].split(":")[1].strip(), "%d.%m.%Y"
         ).date()
-        for row in range(sh.nrows):
-            if sh.row_values(row)[CONTRACT_VALUE_IDX] in (
+        for row in range(sheet.nrows):
+            if sheet.row_values(row)[CONTRACT_VALUE_IDX] in (
                 "",
                 "-",
                 "Количество\nДоговоров,\nшт.",
-            ) or sh.row_values(row)[1] in ("Итого:", "Итого по секции:"):
+            ) or sheet.row_values(row)[1] in ("Итого:", "Итого по секции:"):
                 logger.debug("skipping row %s as non-relevant", row)
                 continue
             else:
                 try:
                     instrument = Instrument(
-                        exchange_product_id=sh.cell_value(row, 1),
-                        exchange_product_name=sh.cell_value(row, 2),
-                        oil_id=sh.cell_value(row, 1)[:4],
-                        delivery_basis_id=sh.cell_value(row, 1)[4:7],
-                        delivery_basis_name=sh.cell_value(row, 3),
-                        delivery_type_id=sh.cell_value(row, 1)[-1],
-                        volume=float(sh.cell_value(row, 4)),
-                        total=float(sh.cell_value(row, 5)),
-                        count=float(sh.cell_value(row, CONTRACT_VALUE_IDX)),
+                        exchange_product_id=sheet.cell_value(row, 1),
+                        exchange_product_name=sheet.cell_value(row, 2),
+                        oil_id=sheet.cell_value(row, 1)[:4],
+                        delivery_basis_id=sheet.cell_value(row, 1)[4:7],
+                        delivery_basis_name=sheet.cell_value(row, 3),
+                        delivery_type_id=sheet.cell_value(row, 1)[-1],
+                        volume=float(sheet.cell_value(row, 4)),
+                        total=float(sheet.cell_value(row, 5)),
+                        count=float(sheet.cell_value(row, CONTRACT_VALUE_IDX)),
                         date=trade_date,
                         created_on=datetime.now(),
                         updated_on=None,
@@ -209,26 +211,8 @@ def read_xls_file(path: pathlib.Path) -> list[Instrument]:
     return instruments
 
 
-async def main() -> None:
-    """
-    Main entrypoint to parser.
-
-    Parser collects URLs of all XLS files and download them.
-    """
-    parser = Parser(site="https://spimex.com")
-    fetch_tasks = [
-        parser.fetch_and_parse_data(page_num) for page_num in REPORTS_RANGE
-    ]
-    result = await asyncio.gather(*fetch_tasks)
-
-    await asyncio.gather(
-        *[
-            parser.collect_reports(url, f"report_{url.split('/')[-1]}")
-            for page in result
-            for url in page
-        ]
-    )
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+def remove_reports_directory(directory: pathlib.Path) -> None:
+    """Clear the directory after processing is done."""
+    sys.stdout.write("Removing reports directory...\n")
+    rmtree(directory)
+    sys.stdout.write(f"{directory} was successfully removed\n")

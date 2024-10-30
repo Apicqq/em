@@ -12,14 +12,16 @@ class AbstractModel(ABC):
         self,
         include: Optional[dict[str, Any]] = None,
         exclude: Optional[set[str]] = None,
-    ):
+    ) -> dict[str, Any]:
         """
         Create a dictionary representation of the model.
 
-        exclude: set of model fields,
+        :param exclude: set of model fields,
          which should be excluded from dictionary representation.
-        include: set of model fields,
+        :param include: set of model fields,
          which should be included into dictionary representation.
+
+        :return: dictionary representation of the model.
         """
 
         data: dict[str, Any] = asdict(self)
@@ -37,6 +39,7 @@ class AbstractModel(ABC):
 @dataclass
 class Instrument(AbstractModel):
     """Model which represents an instrument."""
+
     exchange_product_id: str
     exchange_product_name: str
     oil_id: str
