@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "em"
+version = "0.1.0"
+description = ""
+authors = ["Nikita Smykov <132088678+Apicqq@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+black = "^24.10.0"
+mypy = "^1.13.0"
+psycopg = {extras = ["binary"], version = "^3.2.3"}
+xlrd = "^2.0.1"
+sqlalchemy = "^2.0.36"
+python-dotenv = "^1.0.1"
+asyncpg = "^0.30.0"
+tqdm = "^4.66.6"
+types-tqdm = "^4.66.0.20240417"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.mypy]
+disable_error_code = ["import-untyped", "import-not-found"]
