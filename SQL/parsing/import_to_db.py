@@ -29,7 +29,7 @@ class PreBase:
 Base = declarative_base(cls=PreBase)
 
 
-class Instrument(Base):  # type: ignore
+class InstrumentDB(Base):  # type: ignore
     """Class which represents Instrument model in SQLAlchemy database."""
 
     __tablename__ = "instruments"
@@ -59,7 +59,7 @@ async def import_data_to_db(session: AsyncSession) -> None:
     instruments = parse_xls_files(REPORTS_DIR)
     session.add_all(
         [
-            Instrument(**await instrument.to_dict(exclude={"id"}))
+            InstrumentDB(**await instrument.to_dict(exclude={"id"}))
             for instrument in instruments
         ]
     )
