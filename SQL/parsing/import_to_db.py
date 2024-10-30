@@ -32,8 +32,6 @@ Base = declarative_base(cls=PreBase)
 class InstrumentDB(Base):  # type: ignore
     """Class which represents Instrument model in SQLAlchemy database."""
 
-    __tablename__ = "instruments"
-
     exchange_product_id: Mapped[str] = mapped_column(String(30))
     exchange_product_name: Mapped[str] = mapped_column(String(300))
     oil_id: Mapped[str] = mapped_column(String(30))
