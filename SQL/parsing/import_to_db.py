@@ -68,14 +68,11 @@ async def import_data_to_db(session: AsyncSession) -> None:
 
 async def create_model_and_import_data_to_db() -> None:
     """Main entrypoint to DB model creation."""
-
+    sys.stdout.write("Creating model...\n")
+    await create_model()
     async with AsyncSessionLocal() as session:
-        sys.stdout.write("Creating model...\n")
-        await create_model()
-
         sys.stdout.write("Importing data...\n")
         await import_data_to_db(session)
-
         sys.stdout.write("Importing data was successfully done.\n")
 
 
