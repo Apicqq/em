@@ -75,7 +75,7 @@ class Parser:
                     raise ConnectionError
             except ConnectionError as exception:
                 logger.exception("failed to fetch url %s", url)
-                raise ParserError(url, exception) from ConnectionError
+                raise ParserError(url, exception) from exception
             logger.debug("parsing url %s", url)
             return response.read().decode(encoding).splitlines()
 
