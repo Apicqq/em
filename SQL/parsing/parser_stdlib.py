@@ -9,7 +9,7 @@ from http import HTTPStatus
 from http.client import HTTPResponse
 from urllib.request import urlopen, urlretrieve
 import pathlib
-from typing import Any
+from typing import Any, Optional
 from shutil import rmtree
 
 import xlrd
@@ -45,9 +45,9 @@ class Parser:
     This parser is implemented strictly for XLS files.
     """
 
-    def __init__(self, site):
+    def __init__(self, site: str, pattern: Optional[str]):
         self.site = site
-        self.re_pattern = re.compile(r"href=\"([^\"]+)\"")
+        self.re_pattern = pattern or re.compile(r"href=\"([^\"]+)\"")
 
     @classmethod
     def _check_incoming_data_type(cls, data: Any, expected_type: type) -> None:
