@@ -44,7 +44,7 @@ class InvalidDataException(Exception):
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 logger.addHandler(logging.StreamHandler())
 
 
