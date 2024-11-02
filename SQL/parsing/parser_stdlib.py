@@ -34,7 +34,7 @@ class InvalidDataException(Exception):
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
@@ -96,7 +96,7 @@ class Parser:
     async def _construct_url(self, url: str, site_prefix: bool) -> str:
         """
         Construct URL from a string, optionally adding site prefix.
-        
+
         :param url: incoming piece of URL.
         :param site_prefix: flag for adding site prefix.
         :return: constructed URL.
@@ -176,6 +176,56 @@ class Parser:
         return urls
 
 
+def get_sheet(path: pathlib.Path) -> xlrd.sheet.Sheet:
+    """
+    Open XLS-like file and return the very first sheet from it.
+
+    :param path: Path to XLS file.
+    :return: First sheet from the XLS file.
+    """
+    file = xlrd.open_workbook(path)
+    sheet = file.sheet_by_index(0)
+    return sheet
+
+
+def get_instruments_from_sheet(sheet: xlrd.sheet.Sheet) -> list[Instrument]:
+    """
+    Get list of instruments from XLS sheet by specified indexes.
+
+    :param sheet: Sheet to extract data from.
+    :return: List of Instruments from specified sheet.
+    """
+    instruments = []
+    trade_date = datetime.strptime(
+        sheet.row_values(3)[1].split(":")[1].strip(), "%d.%m.%Y"
+    )
+    for row in range(sheet.nrows):
+        if sheet.row_values(row)[CONTRACT_VALUE_IDX] in (
+            "",
+            "-",
+            "Количество\nДоговоров,\nшт.",
+        ) or sheet.row_values(row)[1] in ("Итого:", "Итого по секции:"):
+            continue
+        else:
+            instruments.append(
+                Instrument(
+                    exchange_product_id=sheet.cell_value(row, 1),
+                    exchange_product_name=sheet.cell_value(row, 2),
+                    oil_id=sheet.cell_value(row, 1)[:4],
+                    delivery_basis_id=sheet.cell_value(row, 1)[4:7],
+                    delivery_basis_name=sheet.cell_value(row, 3),
+                    delivery_type_id=sheet.cell_value(row, 1)[-1],
+                    volume=float(sheet.cell_value(row, 4)),
+                    total=float(sheet.cell_value(row, 5)),
+                    count=float(sheet.cell_value(row, CONTRACT_VALUE_IDX)),
+                    date=trade_date,
+                    created_on=datetime.now(),
+                    updated_on=None,
+                )
+            )
+    return instruments
+
+
 def parse_xls_files(path: pathlib.Path) -> list[Instrument]:
     """
     Read XLS file and return list of instruments.
@@ -186,41 +236,20 @@ def parse_xls_files(path: pathlib.Path) -> list[Instrument]:
     :param path: Path-like format of *.xls file.
     :return: list of instruments.
     """
-    instruments = []
+    parsed_instruments = []
     for item in path.glob("*.xls"):
-        file = xlrd.open_workbook(item)
-        sheet = file.sheet_by_index(0)
-        trade_date = datetime.strptime(
-            sheet.row_values(3)[1].split(":")[1].strip(), "%d.%m.%Y"
-        ).date()
-        for row in range(sheet.nrows):
-            if sheet.row_values(row)[CONTRACT_VALUE_IDX] in (
-                "",
-                "-",
-                "Количество\nДоговоров,\nшт.",
-            ) or sheet.row_values(row)[1] in ("Итого:", "Итого по секции:"):
-                logger.debug("skipping row %s as non-relevant", row)
-                continue
-            else:
-                try:
-                    instrument = Instrument(
-                        exchange_product_id=sheet.cell_value(row, 1),
-                        exchange_product_name=sheet.cell_value(row, 2),
-                        oil_id=sheet.cell_value(row, 1)[:4],
-                        delivery_basis_id=sheet.cell_value(row, 1)[4:7],
-                        delivery_basis_name=sheet.cell_value(row, 3),
-                        delivery_type_id=sheet.cell_value(row, 1)[-1],
-                        volume=float(sheet.cell_value(row, 4)),
-                        total=float(sheet.cell_value(row, 5)),
-                        count=float(sheet.cell_value(row, CONTRACT_VALUE_IDX)),
-                        date=trade_date,
-                        created_on=datetime.now(),
-                        updated_on=None,
-                    )
-                except Exception as exception:
-                    raise ParserError(item, exception)
-                instruments.append(instrument)
-    return instruments
+        try:
+            sheet = get_sheet(item)
+        except xlrd.compdoc.CompDocError as exception:
+            logger.exception("Cannot open doc %s", path)
+            raise ParserError(path, exception) from exception
+        try:
+            instruments = get_instruments_from_sheet(sheet)
+            parsed_instruments.extend(instruments)
+        except ValueError as exception:
+            logger.exception("Cannot parse sheet %s", path)
+            raise ParserError(path, exception) from exception
+    return parsed_instruments
 
 
 def remove_reports_directory(directory: pathlib.Path) -> None:
