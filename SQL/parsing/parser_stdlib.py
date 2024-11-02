@@ -247,7 +247,7 @@ def parse_xls_files(path: pathlib.Path) -> list[Instrument]:
             instruments = get_instruments_from_sheet(sheet)
             parsed_instruments.extend(instruments)
         except ValueError as exception:
-            logger.exception("Cannot parse sheet %s", path)
+            logger.exception("Cannot parse sheet %s", sheet)
             raise ParserError(path, exception) from exception
     return parsed_instruments
 
