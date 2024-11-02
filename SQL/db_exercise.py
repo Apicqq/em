@@ -98,7 +98,7 @@ class Book(Base):
     genre_id: Mapped[int] = mapped_column(
         Integer, ForeignKey('genre.genre_id')
     )
-    genre: relationship('Genre', backref='books')
+    genre = relationship('Genre', backref='books')
 
 
 class Client(Base):
