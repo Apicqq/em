@@ -34,7 +34,7 @@ class InvalidDataException(Exception):
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
@@ -45,7 +45,7 @@ class Parser:
     This parser is implemented strictly for XLS files.
     """
 
-    def __init__(self, site: str, pattern: Optional[str]):
+    def __init__(self, site: str, pattern: Optional[str] = None):
         self.site = site
         self.re_pattern = pattern or re.compile(r"href=\"([^\"]+)\"")
 
@@ -93,9 +93,22 @@ class Parser:
         logger.debug("parsing data by expression %s", expression)
         return [line for line in data if expression in line]
 
+    async def _construct_url(self, url: str, site_prefix: bool) -> str:
+        """
+        Construct URL from a string, optionally adding site prefix.
+        
+        :param url: incoming piece of URL.
+        :param site_prefix: flag for adding site prefix.
+        :return: constructed URL.
+        """
+        if site_prefix:
+            return f"{self.site}{url.split('?')[0]}"
+        else:
+            return url.split("?")[0]
+
     async def get_urls_from_retrieved_data(
         self, data: list[str], site_prefix: bool = True
-    ):
+    ) -> list[str]:
         """
         Retrieve URLs from previously retrieved HTML pieces.
 
@@ -109,12 +122,11 @@ class Parser:
         collected_urls = []
         for item in data:
             if matched_url := re.search(self.re_pattern, item):
-                if site_prefix:
-                    collected_urls.append(
-                        f"{self.site}{matched_url.group(1).split('?')[0]}"
+                collected_urls.append(
+                    await self._construct_url(
+                        matched_url.group(1), site_prefix
                     )
-                else:
-                    collected_urls.append(matched_url.group(1).split("?")[0])
+                )
         return collected_urls
 
     async def collect_reports(self, report_url: str, report_name: str) -> None:
