@@ -54,7 +54,7 @@ async def create_model() -> None:
 
 async def import_data_to_db(session: AsyncSession) -> None:
     """Add previously-created Instruments to database."""
-    instruments = parse_xls_files(REPORTS_DIR)
+    instruments = parse_xls_files(REPORTS_DIR, "*.xls")
     session.add_all(
         [
             InstrumentDB(**await instrument.to_dict(exclude={"id"}))

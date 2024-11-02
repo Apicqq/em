@@ -18,6 +18,16 @@ from models import Instrument
 from constants import (
     REPORTS_DIR,
     CONTRACT_VALUE_IDX,
+    ROWS_TO_SKIP,
+    EXCHANGE_PRODUCT_ID_COL,
+    EXCHANGE_PRODUCT_NAME_COL,
+    OIL_ID_SLICE,
+    DELIVERY_BASIS_NAME_COL,
+    DELIVERY_TYPE_ID_SLICE,
+    DELIVERY_BASIS_ID_SLICE,
+    VOLUME_COL,
+    TOTAL_COL,
+    COUNT_COL,
 )
 
 
@@ -200,24 +210,35 @@ def get_instruments_from_sheet(sheet: xlrd.sheet.Sheet) -> list[Instrument]:
         sheet.row_values(3)[1].split(":")[1].strip(), "%d.%m.%Y"
     )
     for row in range(sheet.nrows):
-        if sheet.row_values(row)[CONTRACT_VALUE_IDX] in (
-            "",
-            "-",
-            "Количество\nДоговоров,\nшт.",
-        ) or sheet.row_values(row)[1] in ("Итого:", "Итого по секции:"):
+        if (
+            sheet.row_values(row)[CONTRACT_VALUE_IDX] in ROWS_TO_SKIP
+            or sheet.row_values(row)[1] in ROWS_TO_SKIP
+        ):
             continue
         else:
             instruments.append(
                 Instrument(
-                    exchange_product_id=sheet.cell_value(row, 1),
-                    exchange_product_name=sheet.cell_value(row, 2),
-                    oil_id=sheet.cell_value(row, 1)[:4],
-                    delivery_basis_id=sheet.cell_value(row, 1)[4:7],
-                    delivery_basis_name=sheet.cell_value(row, 3),
-                    delivery_type_id=sheet.cell_value(row, 1)[-1],
-                    volume=float(sheet.cell_value(row, 4)),
-                    total=float(sheet.cell_value(row, 5)),
-                    count=float(sheet.cell_value(row, CONTRACT_VALUE_IDX)),
+                    exchange_product_id=sheet.cell_value(
+                        row, EXCHANGE_PRODUCT_ID_COL
+                    ),
+                    exchange_product_name=sheet.cell_value(
+                        row, EXCHANGE_PRODUCT_NAME_COL
+                    ),
+                    oil_id=sheet.cell_value(row, EXCHANGE_PRODUCT_ID_COL)[
+                        OIL_ID_SLICE
+                    ],
+                    delivery_basis_id=sheet.cell_value(
+                        row, EXCHANGE_PRODUCT_ID_COL
+                    )[DELIVERY_BASIS_ID_SLICE],
+                    delivery_basis_name=sheet.cell_value(
+                        row, DELIVERY_BASIS_NAME_COL
+                    ),
+                    delivery_type_id=sheet.cell_value(
+                        row, EXCHANGE_PRODUCT_ID_COL
+                    )[DELIVERY_TYPE_ID_SLICE],
+                    volume=float(sheet.cell_value(row, VOLUME_COL)),
+                    total=float(sheet.cell_value(row, TOTAL_COL)),
+                    count=float(sheet.cell_value(row, COUNT_COL)),
                     date=trade_date,
                     created_on=datetime.now(),
                     updated_on=None,
@@ -226,7 +247,7 @@ def get_instruments_from_sheet(sheet: xlrd.sheet.Sheet) -> list[Instrument]:
     return instruments
 
 
-def parse_xls_files(path: pathlib.Path) -> list[Instrument]:
+def parse_xls_files(path: pathlib.Path, file_pattern: str) -> list[Instrument]:
     """
     Read XLS file and return list of instruments.
 
@@ -234,20 +255,21 @@ def parse_xls_files(path: pathlib.Path) -> list[Instrument]:
     on the way. Returns it as list of Instrument objects.
 
     :param path: Path-like format of *.xls file.
+    :param file_pattern: file pattern/extension to iterate over.
     :return: list of instruments.
     """
     parsed_instruments = []
-    for item in path.glob("*.xls"):
+    for item in path.glob(file_pattern):
         try:
             sheet = get_sheet(item)
-        except xlrd.compdoc.CompDocError as exception:
-            logger.exception("Cannot open doc %s", path)
-            raise ParserError(path, exception) from exception
+        except (xlrd.compdoc.CompDocError, IndexError) as exception:
+            logger.exception("Cannot open doc %s", item)
+            raise ParserError(item, exception) from exception
         try:
             parsed_instruments.extend(get_instruments_from_sheet(sheet))
         except ValueError as exception:
             logger.exception("Cannot parse sheet %s", sheet)
-            raise ParserError(path, exception) from exception
+            raise ParserError(sheet, exception) from exception
     return parsed_instruments
 
 
@@ -256,3 +278,13 @@ def remove_reports_directory(directory: pathlib.Path) -> None:
     sys.stdout.write("Removing reports directory...\n")
     rmtree(directory)
     sys.stdout.write(f"{directory} was successfully removed.\n")
+
+
+if __name__ == "__main__":
+    print(
+        get_instruments_from_sheet(
+            get_sheet(
+                pathlib.Path("reports/report_oil_xls_20230713162000.xls")
+            )
+        )
+    )
