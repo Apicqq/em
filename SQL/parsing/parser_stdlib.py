@@ -138,7 +138,7 @@ class Parser:
         This method is implemented in asynchronous way via `asyncio` module.
 
         :param report_url: URL of XLS file.
-        :param report_name: name of XLS file.
+        :param report_name: name of XLS file to be saved with.
         :return: None
         """
         self._check_incoming_data_type(report_url, str)
