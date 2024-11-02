@@ -34,7 +34,7 @@ class InvalidDataException(Exception):
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 logger.addHandler(logging.StreamHandler())
 
 
@@ -227,4 +227,4 @@ def remove_reports_directory(directory: pathlib.Path) -> None:
     """Clear the directory after processing is done."""
     sys.stdout.write("Removing reports directory...\n")
     rmtree(directory)
-    sys.stdout.write(f"{directory} was successfully removed\n")
+    sys.stdout.write(f"{directory} was successfully removed.\n")
