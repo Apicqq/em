@@ -279,12 +279,3 @@ def remove_reports_directory(directory: pathlib.Path) -> None:
     rmtree(directory)
     sys.stdout.write(f"{directory} was successfully removed.\n")
 
-
-if __name__ == "__main__":
-    print(
-        get_instruments_from_sheet(
-            get_sheet(
-                pathlib.Path("reports/report_oil_xls_20230713162000.xls")
-            )
-        )
-    )
