@@ -210,12 +210,10 @@ def get_instruments_from_sheet(sheet: xlrd.sheet.Sheet) -> list[Instrument]:
         sheet.row_values(3)[1].split(":")[1].strip(), "%d.%m.%Y"
     )
     for row in range(sheet.nrows):
-        if (
+        if not (
             sheet.row_values(row)[CONTRACT_VALUE_IDX] in ROWS_TO_SKIP
             or sheet.row_values(row)[1] in ROWS_TO_SKIP
         ):
-            continue
-        else:
             instruments.append(
                 Instrument(
                     exchange_product_id=sheet.cell_value(
@@ -278,4 +276,3 @@ def remove_reports_directory(directory: pathlib.Path) -> None:
     sys.stdout.write("Removing reports directory...\n")
     rmtree(directory)
     sys.stdout.write(f"{directory} was successfully removed.\n")
-
