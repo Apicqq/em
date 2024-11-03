@@ -249,7 +249,7 @@ def get_instruments_from_sheet(sheet: xlrd.sheet.Sheet) -> list[Instrument]:
 
 def parse_xls_files(path: pathlib.Path, file_pattern: str) -> list[Instrument]:
     """
-    Read XLS file and return list of instruments.
+    Read XLS files in given directory and return list of instruments.
 
     This method parses through XLS file and gathers data about instruments
     on the way. Returns it as list of Instrument objects.
