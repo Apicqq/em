@@ -92,40 +92,45 @@ class Book(Base):
     price: Mapped[float] = mapped_column(Float)
     amount: Mapped[int] = mapped_column(Integer)
     author_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('author.author_id')
+        Integer, ForeignKey("author.author_id", ondelete="CASCADE")
     )
-    author = relationship('Author', backref='books')
     genre_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('genre.genre_id')
+        Integer, ForeignKey("genre.genre_id", ondelete="CASCADE")
     )
-    genre = relationship('Genre', backref='books')
+    genre = relationship("Genre", back_populates="books")
+    author = relationship("Author", backref="books")
 
 
 class Client(Base):
     client_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name_client: Mapped[str] = mapped_column(String(50))
     email: Mapped[str] = mapped_column(String(30))
-    city_id: Mapped[int] = mapped_column(Integer, ForeignKey('city.city_id'))
-    city = relationship('City', backref='clients')
+    city_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("city.city_id", ondelete="CASCADE")
+    )
+    city = relationship("City", back_populates="clients")
 
 
 class Buy(Base):
     buy_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buy_description: Mapped[str] = mapped_column(Text)
     client_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('client.client_id')
+        Integer, ForeignKey("client.client_id", ondelete="CASCADE")
     )
-    client = relationship('Client', backref='buys')
-    books = relationship('BuyBook', backref='buy')
-    steps = relationship('BuyStep', backref='buy')
+    client = relationship("Client", back_populates="buys")
 
 
 class BuyBook(Base):
     buy_book_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    buy_id: Mapped[int] = mapped_column(Integer, ForeignKey('buy.buy_id'))
-    book_id: Mapped[int] = mapped_column(Integer, ForeignKey('book.book_id'))
+    buy_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("buy.buy_id", ondelete="CASCADE")
+    )
+    book_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("book.book_id", ondelete="CASCADE")
+    )
     amount: Mapped[int] = mapped_column(Integer)
-    book = relationship('Book', backref='buy_books')
+    buy = relationship("Buy", back_populates="buy_books")
+    book = relationship("Book", back_populates="buy_books")
 
 
 class Step(Base):
@@ -135,8 +140,13 @@ class Step(Base):
 
 class BuyStep(Base):
     buy_step_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    buy_id: Mapped[int] = mapped_column(Integer, ForeignKey('buy.buy_id'))
-    step_id: Mapped[int] = mapped_column(Integer, ForeignKey('step.step_id'))
-    step = relationship('Step', backref='buy_steps')
+    buy_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("buy.buy_id", ondelete="CASCADE")
+    )
+    step_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("step.step_id", ondelete="CASCADE")
+    )
     date_step_beg: Mapped[date] = mapped_column(Date)
     date_step_end: Mapped[date] = mapped_column(Date)
+    buy = relationship("Buy", back_populates="buy_steps")
+    step = relationship("Step", back_populates="buy_steps")
